@@ -31,6 +31,9 @@ RUN apt-get update && \
         portaudio19-dev \
         libasound2 \
         libsndfile1 \
+        # Protobuf for MediaPipe
+        libprotobuf-dev \
+        protobuf-compiler \
         # Build tools for compiling Python packages
         build-essential \
         gcc \

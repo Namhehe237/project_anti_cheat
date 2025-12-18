@@ -4,9 +4,10 @@ uvicorn[standard]>=0.24.0
 websockets>=12.0
 
 # Computer vision & face detection
-opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
 mediapipe>=0.10.0
 numpy>=1.24.0
+protobuf>=3.20.0,<4.0.0
 
 # Audio processing & voice detection
 webrtcvad>=2.0.10
