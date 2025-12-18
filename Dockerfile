@@ -67,5 +67,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
 
 # Run the FastAPI application with uvicorn
-CMD ["uv", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8081"]
-
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8081"]
