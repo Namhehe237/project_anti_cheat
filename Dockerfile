@@ -10,11 +10,7 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install system dependencies required for:
-# - OpenCV: libgl1, libglib2.0-0, libsm6, libxext6, libxrender1
-# - MediaPipe: libgomp1, libgstreamer1.0-0, libgstreamer-plugins-base1.0-0
-# - Audio processing (webrtcvad): build-essential, portaudio19-dev
-# - General utilities: wget for healthchecks
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         # OpenCV dependencies
@@ -45,7 +41,13 @@ RUN apt-get update && \
 
 # Copy and install Python dependencies
 COPY requirements.txt .
+
+# Install dependencies in specific order to fix MediaPipe issues
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir protobuf==3.20.3 && \
+    pip install --no-cache-dir numpy>=1.24.0 && \
+    pip install --no-cache-dir opencv-python-headless>=4.8.0 && \
+    pip install --no-cache-dir mediapipe==0.10.9 && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
