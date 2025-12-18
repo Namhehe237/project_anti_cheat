@@ -1,20 +1,32 @@
 # Use Python 3.11 slim image
-FROM python:3.11
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-# - libgl1: OpenCV GUI support (newer Debian uses libgl1 instead of libgl1-mesa-glx)
-# - libglib2.0-0: MediaPipe dependency
-# - ffmpeg: MediaPipe optional dependency
-# - portaudio19-dev: PyAudio (even if not used, to avoid build errors)
-RUN apt-get update && apt-get install -y \
-    libgl1 \
+# Install system dependencies for OpenCV, MediaPipe, and audio processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # OpenCV dependencies
+    libgl1-mesa-glx \
     libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
     libgomp1 \
+    libgstreamer1.0-0 \
+    libgstreamer-plugins-base1.0-0 \
+    # MediaPipe dependencies
+    libopencv-dev \
+    python3-opencv \
+    # Audio processing dependencies
     ffmpeg \
     portaudio19-dev \
+    libasound2-dev \
+    libsndfile1 \
+    # Build tools
+    gcc \
+    g++ \
+    make \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
