@@ -10,7 +10,7 @@ numpy>=1.24.0
 
 # Audio processing & voice detection
 webrtcvad>=2.0.10
-pyaudio>=0.2.14
+# pyaudio>=0.2.14
 
 # Data validation & serialization
 pydantic>=2.5.0
