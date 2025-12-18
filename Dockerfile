@@ -1,59 +1,64 @@
-# Use Python 3.11 slim image
+# Use Python 3.11 slim as base image
 FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for OpenCV, MediaPipe, and audio processing
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    # OpenCV dependencies
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    libgstreamer1.0-0 \
-    libgstreamer-plugins-base1.0-0 \
-    # MediaPipe dependencies
-    libopencv-dev \
-    python3-opencv \
-    # Audio processing dependencies
-    ffmpeg \
-    portaudio19-dev \
-    libasound2-dev \
-    libsndfile1 \
-    # Build tools
-    gcc \
-    g++ \
-    make \
-    && rm -rf /var/lib/apt/lists/*
+# Prevent Python from writing pyc files and buffer output
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Copy requirements first for better caching
+# Install system dependencies required for:
+# - OpenCV: libgl1, libglib2.0-0, libsm6, libxext6, libxrender1
+# - MediaPipe: libgomp1, libgstreamer1.0-0, libgstreamer-plugins-base1.0-0
+# - Audio processing (webrtcvad): build-essential, portaudio19-dev
+# - General utilities: wget for healthchecks
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        # OpenCV dependencies
+        libgl1 \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+        # MediaPipe dependencies
+        libgomp1 \
+        libgstreamer1.0-0 \
+        libgstreamer-plugins-base1.0-0 \
+        # Audio processing dependencies
+        portaudio19-dev \
+        libasound2 \
+        libsndfile1 \
+        # Build tools for compiling Python packages
+        build-essential \
+        gcc \
+        g++ \
+        # Utility for healthchecks
+        wget \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy and install Python dependencies
 COPY requirements.txt .
-
-# Upgrade pip and install Python dependencies
-RUN pip install --no-cache-dir --upgrade pip setuptools && \
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY app/ ./app/
-COPY run.sh .
 
-# Make run.sh executable
+# Copy run script if exists
+COPY run.sh ./
 RUN chmod +x run.sh
 
-# Expose port
+# Expose the application port
 EXPOSE 8081
 
-# Set environment variables
-ENV PYTHONUNBUFFERED=1
-ENV PYTHONDONTWRITEBYTECODE=1
+# Healthcheck using wget (lightweight alternative to curl/requests)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
 
-# Health check (using curl instead of requests to avoid extra dependency)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8081/health')" || exit 1
-
-# Run the application
+# Run the FastAPI application with uvicorn
 CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8081"]
 
